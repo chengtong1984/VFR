@@ -4,7 +4,7 @@ import pymysql
 
 players = []
 myhost=''
-myport=''
+myport=
 myuser=''
 mypasswd=''
 mydb=''
@@ -31,8 +31,7 @@ def saveSaturationFile(playerId):
     except:
         print('%s disconnected' % playerId)
         return -1
-    html = res.text
-    htmlDict = json.load(html)
+    htmlDict = res.json()
     newChecksum = htmlDict.get('data').get('attributes').get('files').get('saturation.xml').get('checksum')
     oldChecksum = redisPool.getset(playerId,newChecksum)
     if newChecksum == oldChecksum:
@@ -45,7 +44,7 @@ def saveSaturationFile(playerId):
             file.write(downloadRes.content)
             
 readPlayerId
-processPool = ThreadPool()
+processPool = ThreadPool(processes=4)
 processPool.map(saveSaturationFile,players)
 processPool.close()
 processPool.join()
