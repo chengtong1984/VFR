@@ -14,6 +14,14 @@ import os
 from collections import Counter
 
 
+reload(sys)
+sys.setdefaultencoding('utf-8')
+
+
+today = str(datetime.date.today())
+display_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+tomorrow = str(datetime.date.today() + datetime.timedelta(days=1))
 today = str(datetime.date.today())
 display_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
@@ -147,31 +155,6 @@ def saveSaturationFile(playerId):
                 localPath = filepath + str(playerId) + '.xml'
                 with open(localPath,'wb') as file:
                         file.write(downloadRes.content)
-
-def main():
-        readPlayerId()
-        for playerName in players:
-                saveSaturationFile(playerName)
-                savePlayerInfo(playerName)
-        dayReportInfo(tomorrow)
-
-main()
-
-reload(sys)
-sys.setdefaultencoding('utf-8')
-
-omitList=['saturation.xml','meta.json.js','sc.3.0.0.js','sc.2.3.0.js','sc.2.4.0.js','sc.2.5.0.js']
-players = []
-myhost='127.0.0.1'
-myport=3306
-myuser='vrf'
-mypasswd='Hu@teng123'
-mydb='test'
-apiurl='https://content-api.cn.viooh.com/api/v2/players/'
-filepath='/home/apache/test/'
-tomorrow = str(datetime.date.today() + datetime.timedelta(days=1))
-today = str(datetime.date.today())
-display_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 def generate_html():
         result={}
