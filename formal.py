@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+from jinja2 import Environment, FileSystemLoader
+import sys
+import schedule
 import requests,json
 from multiprocessing.dummy import Pool as ThreadPool
 import pymysql
@@ -148,4 +152,81 @@ def main():
         dayReportInfo(tomorrow)
 
 main()
+
+reload(sys)
+sys.setdefaultencoding('utf-8')
+
+omitList=['saturation.xml','meta.json.js','sc.3.0.0.js','sc.2.3.0.js','sc.2.4.0.js','sc.2.5.0.js']
+players = []
+myhost='127.0.0.1'
+myport=3306
+myuser='vrf'
+mypasswd='Hu@teng123'
+mydb='test'
+apiurl='https://content-api.cn.viooh.com/api/v2/players/'
+filepath='/home/apache/test/'
+tomorrow = str(datetime.date.today() + datetime.timedelta(days=1))
+today = str(datetime.date.today())
+display_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+def generate_html():
+        result={}
+        body = []
+        num = 1
+        conn = pymysql.connect(host=myhost,port=myport,user=myuser,passwd=mypasswd,db=mydb,use_unicode=True,charset='utf8')
+        cursor_1 = conn.cursor()
+        cursor_1.execute('select a.campaign_id,b.customer_name,b.sb_id,b.start,b.end,a.count_num,a.screen_num,FORMAT(b.content_length/1000,0) from daysum_info a left join campaign_info b on a.campaign_id = b.campaign_id where a.show_time = %s order by a.campaign_id;',(tomorrow,))
+        rows = cursor_1.fetchall()
+        cursor_1.close()
+        conn.close()
+
+        for row in rows:
+                conn2 = pymysql.connect(host=myhost,port=myport,user=myuser,passwd=mypasswd,db=mydb,use_unicode=True,charset='utf8')
+                cursor_2 = conn2.cursor()
+                cursor_2.execute('select count_num from daysum_info where show_time = %s and campaign_id = %s and screen_num = %s',(today,row[0],row[6],))
+                rows_2 = cursor_2.fetchone()
+                cursor_2.close()
+                conn2.close()
+                if rows_2 is None:
+                        result['status'] = 'new'
+                elif rows_2[0] == row[5]:
+                        result['status'] = 'normal'
+                else:
+                        result['status'] = 'diff'
+
+                result['campaign_id']=row[0]
+                result['customer_name']=row[1]
+                result['sb_id']=row[2]
+                result['starts_at']=row[3]
+                result['ends_at']=row[4]
+                result['count']=row[5]
+                result['screen']=row[6]
+                result['content_length'] = row[7]
+                result['num'] = (num % 2)
+                body.append(result.copy())
+                num = num + 1
+        print(display_time)
+        env = Environment(loader=FileSystemLoader('./'))
+        template = env.get_template('template.html')
+        with open("/var/www/html/viooh/index.html",'w+') as fout:
+                html_content = template.render(tomorrow=tomorrow,body=body,display_time=display_time)
+                fout.write(html_content)
+
+def main():
+        tomorrow = str(datetime.date.today() + datetime.timedelta(days=1))
+        today = str(datetime.date.today())
+        display_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        readPlayerId()
+        for playerName in players:
+                saveSaturationFile(playerName)
+                savePlayerInfo(playerName)
+        dayReportInfo(tomorrow)
+        generate_html()
+
+if __name__ == "__main__":
+        schedule.every(1).hour.do(main)
+        while True:
+                schedule.run_pending()
+                time.sleep(1)
+
 
