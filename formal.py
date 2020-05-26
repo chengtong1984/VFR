@@ -13,6 +13,10 @@ import time
 import os
 from collections import Counter
 
+
+today = str(datetime.date.today())
+display_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
 tomorrow = str(datetime.date.today() + datetime.timedelta(days=1))
 omitList=['saturation.xml','meta.json.js','sc.3.0.0.js','sc.2.3.0.js','sc.2.4.0.js','sc.2.5.0.js']
 players = []
