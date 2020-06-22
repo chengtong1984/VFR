@@ -1,4 +1,12 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
+'''
+@Author Sam Cheng
+@desc this is a script for tomorrow plan of campaigns
+@date 2020-05-01
+'''
+
 import schedule
 import sys
 import datetime
@@ -249,7 +257,7 @@ def generate_html():
                 body.append(result.copy())
                 num = num + 1
 
-        env = Environment(loader=FileSystemLoader('./'))
+        env = Environment(loader=FileSystemLoader('/home/apache/python/'))
         template = env.get_template('template.html')
         with open("/var/www/html/viooh/index.html",'w+') as fout:
                 html_content = template.render(tomorrow=tomorrow,body=body,display_time=display_time)
