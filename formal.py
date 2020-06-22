@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
-from jinja2 import Environment, FileSystemLoader
-import sys
 import schedule
+import sys
+import datetime
+from jinja2 import Environment, FileSystemLoader
 import requests,json
 from multiprocessing.dummy import Pool as ThreadPool
 import pymysql
@@ -12,20 +13,20 @@ import datetime
 import time
 import os
 from collections import Counter
-
+import smtplib
+from email.mime.text import MIMEText
+import logging
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
+logging.basicConfig(
+        level=logging.DEBUG,
+        format='%(asctime)s : %(levelname)s  %(message)s',
+        datefmt='%Y-%m-%d %A %H:%M:%S',
+        filename='/home/apache/python/vfr.log',
+        filemode='w')  # 写入模式“w”或“a”
 
-today = str(datetime.date.today())
-display_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-tomorrow = str(datetime.date.today() + datetime.timedelta(days=1))
-today = str(datetime.date.today())
-display_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-tomorrow = str(datetime.date.today() + datetime.timedelta(days=1))
 omitList=['saturation.xml','meta.json.js','sc.3.0.0.js','sc.2.3.0.js','sc.2.4.0.js','sc.2.5.0.js']
 players = []
 myhost='127.0.0.1'
@@ -35,8 +36,46 @@ mypasswd='Hu@teng123'
 mydb='test'
 apiurl='https://content-api.cn.viooh.com/api/v2/players/'
 filepath='/home/apache/test/'
-
 redisPool = redis.Redis(host='127.0.0.1',port='6379',db=0)
+
+mailto_list=["sam.cheng@jcdecaux.com"]
+cc_mail=[""]
+mail_host="smtp.qq.com"
+mail_user="2944329431@qq.com"
+mail_pass="kqmrxackdcqldgfh"
+
+
+def sendMail(to_list,to_cc):
+        tomorrow = str(datetime.date.today() + datetime.timedelta(days=1))
+        f = open("/var/www/html/viooh/index.html",'r')
+        msg = '''VFR4.0测试版'''
+        mail_content = msg.encode('utf-8')
+        while True:
+                line = f.readline()
+                msg += line.strip()+'\n'
+                if not line:
+                        break
+        f.close()
+        mail_content = msg.encode('utf-8')
+        me="2944329431@qq.com"+"<"+mail_user+">"
+        msg = MIMEText(mail_content,_subtype='html',_charset='utf8')
+        msg['Subject'] = "150块DP双联屏" + tomorrow +"播放预告"
+        msg['From'] = "2944329431@qq.com"
+        msg['To'] = ";".join(to_list)
+        msg['Cc'] = ";".join(to_cc)
+        try:
+                s = smtplib.SMTP()
+                s.connect(mail_host,587)
+                s.ehlo()
+                s.starttls()
+                s.login(mail_user,mail_pass)
+                s.sendmail(me,to_list+to_cc,msg.as_string())
+                s.close()
+                logging.debug('发送邮件成功')
+                return True
+        except Exception, e:
+                logging.error('发送邮件失败，原因: %s' % e)
+                return False
 
 
 def readPlayerId():
@@ -50,56 +89,80 @@ def readPlayerId():
         cursor_1.close()
         conn.close()
         return players
-
 def savePlayerInfo(playerId):
-        res = requests.get(apiurl + str(playerId))
-        htmlDict = res.json()
-        fileList = htmlDict.get('data').get('attributes').get('files').keys()
-        campaignList = list(set(fileList) - set(omitList))
-        for campaign in campaignList:
-                viooh_id = str(campaign)
-                conn = pymysql.connect(host=myhost,port=myport,user=myuser,passwd=mypasswd,db=mydb)
-                cursor_1 = conn.cursor()
-                cursor_1.execute('select * from campaign_info where viooh_id = %s',(viooh_id,))
-                row = cursor_1.fetchone()
-                cursor_1.close()
-                conn.close()
-                if row is None:
-                        campaignUrl = htmlDict.get('data').get('attributes').get('files').get(campaign).get('path')
-                        res = requests.get(campaignUrl)
-                        campaignDict = res.json()
-                        petalFile = campaignDict.get('data').get('attributes').get('files').get('petal.json.js').get('path')
-                        res = requests.get(petalFile)
-                        content = res.text
-                        content = content.replace(' ','').replace('\n','').replace('\r','')
-                        p1 = re.compile(r'[(](.*)[)]', re.S)
-                        content = re.findall(p1,content)
-                        content = str(content).split(',document.currentScript.id,',1)[0].lstrip('\'[').lstrip('u\'')
+        try:
+                res = requests.get(apiurl + str(playerId),timeout=(5,10))
+                htmlDict = res.json()
+                newChecksum = htmlDict.get('data').get('attributes').get('files').get('saturation.xml').get('checksum')
+                oldChecksum = redisPool.getset(playerId,newChecksum)
+                if newChecksum == oldChecksum:
+                        logging.debug('%s saturation文件未发生改变，不下载' % playerId)
+                        pass
+                else:
+                        downloadUrl = htmlDict.get('data').get('attributes').get('files').get('saturation.xml').get('path')
                         try:
-                                content  = json.loads(content)
-                                cus_name = content.get('campaign').get('name').decode('unicode_escape')
-                                sb_num = content.get('campaign').get('booking_engine_id')
-                                starts_at = content.get('campaign').get('starts_at')[0:9]
-                                ends_at = content.get('campaign').get('ends_at')[0:9]
-                                bs_id = content.get('campaign').get('broadsign_campaign_ids')[0]
-                                viooh_id = content.get('campaign').get('id')
-                                query = 'insert into campaign_info(viooh_id,campaign_id,sb_id,customer_name,start,end) values(%s,%s,%s,%s,%s,%s)'
-                                values = (viooh_id,bs_id,sb_num,cus_name,starts_at,ends_at)
-                                conn = pymysql.connect(host=myhost,port=myport,user=myuser,passwd=mypasswd,db=mydb)
-                                cursor_1 = conn.cursor()
-                                cursor_1.execute(query,values)
-                                conn.commit()
-                                cursor_1.close()
-                                conn.close()
+                                downloadRes = requests.get(downloadUrl,timeout=(5,20))
+                                localPath = filepath + str(playerId) + '.xml'
+                                with open(localPath,'wb') as file:
+                                        file.write(downloadRes.content)
+                                logging.debug('%s saturation新文件下载成功.' % playerId)
                         except Exception,e:
-                                print(content)
+                                logging.error('%s saturation文件下载失败,原因 %s.' % (playerId,e))
+
+
+                fileList = htmlDict.get('data').get('attributes').get('files').keys()
+                campaignList = list(set(fileList) - set(omitList))
+                for campaign in campaignList:
+                        viooh_id = str(campaign)
+                        conn = pymysql.connect(host=myhost,port=myport,user=myuser,passwd=mypasswd,db=mydb)
+                        cursor_1 = conn.cursor()
+                        cursor_1.execute('select * from campaign_info where viooh_id = %s',(viooh_id,))
+                        row = cursor_1.fetchone()
+                        cursor_1.close()
+                        conn.close()
+                        logging.debug('%s 检查广告活动 %s 结束' % (playerId,campaign))
+                        if row is None:
+                                campaignUrl = htmlDict.get('data').get('attributes').get('files').get(campaign).get('path')
+                                res = requests.get(campaignUrl,timeout=(5,10))
+                                campaignDict = res.json()
+                                petalFile = campaignDict.get('data').get('attributes').get('files').get('petal.json.js').get('path')
+                                res = requests.get(petalFile,timeout=(5,10))
+                                content = res.text
+                                content = content.replace(' ','').replace('\n','').replace('\r','')
+                                p1 = re.compile(r'[(](.*)[)]', re.S)
+                                content = re.findall(p1,content)
+                                content = str(content).split(',document.currentScript.id,',1)[0].lstrip('\'[').lstrip('u\'')
+                                try:
+                                        content  = json.loads(content)
+                                        cus_name = content.get('campaign').get('name').decode('unicode_escape')
+                                        sb_num = content.get('campaign').get('booking_engine_id')
+                                        starts_at = content.get('campaign').get('starts_at').split('T')[0]
+                                        ends_at = content.get('campaign').get('ends_at').split('T')[0]
+                                        bs_id = content.get('campaign').get('broadsign_campaign_ids')[0]
+                                        viooh_id = content.get('campaign').get('id')
+                                        content_len = content.get('frames').values()[0].get('content_length')
+                                        query = 'insert into campaign_info(viooh_id,campaign_id,sb_id,customer_name,start,end,content_length) values(%s,%s,%s,%s,%s,%s,%s)'
+                                        values = (viooh_id,bs_id,sb_num,cus_name,starts_at,ends_at,content_len)
+                                        conn = pymysql.connect(host=myhost,port=myport,user=myuser,passwd=mypasswd,db=mydb)
+                                        cursor_1 = conn.cursor()
+                                        cursor_1.execute(query,values)
+                                        conn.commit()
+                                        cursor_1.close()
+                                        conn.close()
+                                        logging.debug('新广告活动 %s 已成功保存至数据库' % sb_num)
+                                except Exception,e:
+                                        logging.error('%s 广告活动处理失败,原因: %s' % (campaignUrl,e))
+        except Exception,e:
+                logging.error('%s 播放机无法连接，请检查网络' % playerId)
 
 def dayReportInfo(todayTime):
+        flist = []
         conn = pymysql.connect(host=myhost,port=myport,user=myuser,passwd=mypasswd,db=mydb)
         re_queue = redis.Redis(host='localhost',port=6379)
         filePath = '/home/apache/test/'
         files = os.listdir(filePath.decode('utf-8'))
         for file in files:
+                flist = set()
                 file = file.encode('utf-8')
                 playerId = file[0:-4]
                 with open(filePath + file,'r') as fh:
@@ -121,13 +184,19 @@ def dayReportInfo(todayTime):
                                 f = str(c)+':'+str(playerId)+':'+str(stra)
                                 re_queue.lpush(f,e)
                                 re_queue.expire(f,60)
-                                result=re_queue.lrange(f,0,-1)
-                                for g in result:
-                                        h += int(g)
-                                re_queue.expire(str(c)+':'+str(stra),60)
                                 re_queue.expire(str(stra),60)
-                                re_queue.lpush(str(c)+':'+str(stra),h)
                                 re_queue.sadd(str(stra),str(c))
+                                flist.add(f)
+                        for m in flist:
+                                q = 0
+                                o = re_queue.lrange(m,0,-1)
+                                for p in o:
+                                        q += int(p)
+                                j = m.split(':')[0] + ':' + m.split(':')[2]
+                                re_queue.expire(j,60)
+                                re_queue.lpush(j,q)
+                logging.debug('%s 文件已成功转换至缓存redis.' % file)
+
         cur = conn.cursor()
         cur.execute('delete from daysum_info where show_time = %s',(todayTime,))
         members=re_queue.smembers(todayTime)
@@ -139,22 +208,9 @@ def dayReportInfo(todayTime):
                         query = 'insert into daysum_info(campaign_id,count_num,screen_num,show_time) values(%s,%s,%s,%s)'
                         cur.execute(query,values)
                         conn.commit()
+                logging.debug('%s 广告活动报表数据已成功存入数据库' % member)
         cur.close()
         conn.close()
-
-def saveSaturationFile(playerId):
-        res = requests.get(apiurl + str(playerId))
-        htmlDict = res.json()
-        newChecksum = htmlDict.get('data').get('attributes').get('files').get('saturation.xml').get('checksum')
-        oldChecksum = redisPool.getset(playerId,newChecksum)
-        if newChecksum == oldChecksum:
-                pass
-        else:
-                downloadUrl = htmlDict.get('data').get('attributes').get('files').get('saturation.xml').get('path')
-                downloadRes = requests.get(downloadUrl)
-                localPath = filepath + str(playerId) + '.xml'
-                with open(localPath,'wb') as file:
-                        file.write(downloadRes.content)
 
 def generate_html():
         result={}
@@ -192,28 +248,32 @@ def generate_html():
                 result['num'] = (num % 2)
                 body.append(result.copy())
                 num = num + 1
-        print(display_time)
+
         env = Environment(loader=FileSystemLoader('./'))
         template = env.get_template('template.html')
         with open("/var/www/html/viooh/index.html",'w+') as fout:
                 html_content = template.render(tomorrow=tomorrow,body=body,display_time=display_time)
                 fout.write(html_content)
-
+        logging.debug('成功生成明日报表')
 def main():
+        global tomorrow
+        global today
+        global display_time
         tomorrow = str(datetime.date.today() + datetime.timedelta(days=1))
         today = str(datetime.date.today())
         display_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         readPlayerId()
         for playerName in players:
-                saveSaturationFile(playerName)
                 savePlayerInfo(playerName)
         dayReportInfo(tomorrow)
         generate_html()
-
+        sendMail(mailto_list,cc_mail)
+'''
 if __name__ == "__main__":
-        schedule.every(1).hour.do(main)
+        schedule.every().hour.do(main)
         while True:
                 schedule.run_pending()
                 time.sleep(1)
-
+'''
+main()
 
