@@ -1,25 +1,23 @@
 import requests
 import threading
 import time
+import json
  
-data = {
-	"times": 20, # 并发量
-	#"method": "POST",
-	"url": "http://www.baidu.com",
-	"header": {
-		#header
-	},
-	"body": {
-		#参数
-	}
+para = {
+	"times": 5000, # 并发量
+	"url": "http://www.chengtong.tech",
+	"header": {'Content-Type': 'application/json;charset=UTF-8'}
 }
- 
+
+msg = {"pop": [{"player_id": "1219409", "timestamp": "2020-06-22T10:33:04", "duration": 10035, "content_id": 2055827}]}
+
+
  
 def get_requests():
 	global RIGHT_NUM
 	global ERROR_NUM
 	try:
-		r = requests.get(data["url"],headers = data["header"])
+		r = requests.post(para["url"],data=json.dumps(msg),headers=para["header"])
 		#print(r.status_code)
 		if r.status_code == 200:
 			RIGHT_NUM += 1
@@ -32,7 +30,7 @@ def get_requests():
 def run1():
 	Threads = []
 	time1 = time.process_time()
-	for i in range(data["times"]):
+	for i in range(para["times"]):
 		t = threading.Thread(target = get_requests)
 		t.setDaemon(True)
 		Threads.append(t)
@@ -45,10 +43,10 @@ def run1():
 	time2 = time.process_time()
  
 	print("===============测试结果===================")
-	print("URL:", data["url"])
-	print("并发数:", data["times"])
+	print("URL:", para["url"])
+	print("并发数:", para["times"])
 	print("总耗时(秒):", time2 - time1)
-	print("每次请求耗时(秒):", (time2 - time1) / data["times"])
+	print("每次请求耗时(秒):", (time2 - time1) / para["times"])
 	print("正确数量:", RIGHT_NUM)
 	print("错误数量:", ERROR_NUM)
  
