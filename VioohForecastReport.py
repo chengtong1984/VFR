@@ -275,9 +275,9 @@ def generate_html():
                 body.append(result.copy())
                 num=num+1
 
-        env=Environment(loader=FileSystemLoader('./'))
+        env=Environment(loader=FileSystemLoader(cur_path))
         template=env.get_template('template.html')
-        with open("/var/www/html/viooh/index.html",'w+') as fout:
+        with open(send_file,'w+') as fout:
                 html_content=template.render(tomorrow=tomorrow,body=body,display_time=display_time)
                 fout.write(html_content)
         logging.debug('成功生成明日报表')
