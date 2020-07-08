@@ -95,7 +95,11 @@ How to run VFR from the terminal
 ==========================
 Note:  The running of the VFR_script may take several minutes.
 1.  Open SSH-Terminal
-2.  Run the VioohForecastReport.py file using this command:  python ./VioohForcastReport.py
+2.  Create two documents. One is for storing the saturation.xml.The other is for storing the report.html file
+3.  Create the tables using the createTable.sql
+4.  Finish the config.ini.Fill all the blank places.
+5.  Put three files under the same document.VioohForecastReport.py,config.ini,template.html
+6.  Run the VioohForecastReport.py file using this command:  python ./VioohForcastReport.py
  
 
 
