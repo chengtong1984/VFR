@@ -73,6 +73,7 @@ redb=
 [MAIL]
 
 mailto_list = []
+cc_mail = []
 mail_host = #mail_server_url
 mail_user = #mail_account
 mail_pass = 
