@@ -6,7 +6,7 @@ MO-ITS Support Utility for Viooh Campaign Release Notes
 ================================================================
 July 30, 2020
 
-VFR is a standalone script that performs a detailed scan and report of all players information to assist you with Viooh Campaign Schedule playback count. VFR produces an e-mail that can be sent, viewed and shared by the user.
+VFR is a standalone script that performs a detailed scan and report of all players information from VIOOH-API to assist you with Viooh Campaign Schedule playback count. VFR produces an e-mail that can be sent, viewed and shared by the user.
 
 Note:  No personal information is collected.  
 
