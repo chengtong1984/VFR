@@ -55,6 +55,8 @@ Usage: Parameter is in the config.ini.Please keep config.ini in the same dir.
 
 [MYSQL]
 
+#according to your database 
+
 myhost = 
 myport = 
 myuser = 
