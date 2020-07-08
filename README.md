@@ -84,7 +84,7 @@ filemode=w
 
 [PARAS]
 
-viooh_url = https://content-api.cn.viooh.com/api/v2/players/
+viooh_url = 
 saturation_dir = 
 ignorefile = saturation.xml,meta.json.js,sc.3.0.0.js,sc.2.3.0.js,sc.2.4.0.js,sc.2.5.0.js
 
