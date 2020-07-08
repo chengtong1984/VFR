@@ -1,0 +1,80 @@
+<html>
+<style type=text/css>
+.tg  {border-collapse:collapse;border-spacing:0;border-width:0px;border-style:solid;border-color:#9ABAD9;}
+.tg td{font-family:Arial, sans-serif;font-size:14px;padding:10px 5px;border-style:solid;border-width:0px;overflow:hidden;word-break:normal;border-color:#9ABAD9;color:#444;background-color:#EBF5FF;text-align:center}
+.tg th{font-family:Arial, sans-serif;font-size:14px;font-weight:bold;padding:10px 5px;border-style:solid;border-width:0px;overflow:hidden;word-break:normal;border-color:#9ABAD9;color:#fff;background-color:#409cff;}
+.tg .tg-blued{background-color:#D2E4FC;border-color:inherit;text-align:center;vertical-align:center}
+.tg .tg-red{background-color:#FFC78E;border-color:inherit;text-align:center;vertical-align:center;}
+.tg .tg-greend{background-color:#00DB00;border-color:inherit;text-align:center;vertical-align:center}
+.tg .tg-head{border-color:inherit;text-align:center;vertical-align:center}
+.tg .tg-comm{background-color:#D2E4FC;border-color:inherit;text-align:left;vertical-align:center;font-size:10px;font-weight:bold;}
+.tg .tg-greenl{background-color:#A6FFA6;border-color:inherit;text-align:center;vertical-align:center}
+.tg .tg-bluel{border-color:inherit;text-align:center;vertical-align:center}
+</style>
+<table class="tg" cellspacing="0" >
+<tr>
+<th class="tg-head" colspan="7">VIOOH{{tomorrow}}播放计划</th>
+</tr>
+<tr>
+<td class="tg-comm" colspan="7">
+<b>备注：</b><font style="color:green;font-weight:bold">绿色</font>为明日新增广告活动&nbsp&nbsp&nbsp&nbsp<font style="color:#FF7F24;font-weight:bold">橘色</font>为次数与昨日不同，不代表合同次数
+</td>
+</tr>
+<tr><th class="tg-head">BroadsignID</th><th class="tg-head">广告名</th><th class="tg-head">VIOOH编号</th><th class="tg-head">预计开始日期</th><th class="tg-head">预计结束日期</th><th class="tg-head">屏幕总数</th><th class="tg-head">单屏次数</th></tr>
+{% for item in body %}
+        {% if item.sb_id == None %}
+                <tr align="center">
+                <td class="tg-greend">{{item.campaign_id}}</td>
+                <td class="tg-greend">未完成上刊暂无信息</td>
+                <td class="tg-greend">暂无信息</td>
+                <td class="tg-greend">暂无信息</td>
+                <td class="tg-greend">暂无信息</td>
+                <td class="tg-greend">{{item.screen}}块</td>
+                <td class="tg-greend">{{item.count}}次</td>
+                </tr>
+        {% elif item.status == 'new' %}
+                <tr align="center">
+                <td class="tg-greend">{{item.campaign_id}}</td>
+                <td class="tg-greend">{{item.customer_name}}</td>
+                <td class="tg-greend">{{item.sb_id}}</td>
+                <td class="tg-greend">{{item.starts_at}}</td>
+                <td class="tg-greend">{{item.ends_at}}</td>
+                <td class="tg-greend">{{item.screen}}块</td>
+                <td class="tg-greend">{{item.count}}次</td>
+                </tr>
+        {% elif item.status == 'diff' %}
+                <tr align="center">
+                <td class="tg-red">{{item.campaign_id}}</td>
+                <td class="tg-red">{{item.customer_name}}</td>
+                <td class="tg-red">{{item.sb_id}}</td>
+                <td class="tg-red">{{item.starts_at}}</td>
+                <td class="tg-red">{{item.ends_at}}</td>
+                <td class="tg-red">{{item.screen}}块</td>
+                <td class="tg-red">{{item.count}}次</td>
+                </tr>
+        {% elif item.num == 0 %}
+                <tr align="center">
+                <td class="tg-blued">{{item.campaign_id}}</td>
+                <td class="tg-blued">{{item.customer_name}}</td>
+                <td class="tg-blued">{{item.sb_id}}</td>
+                <td class="tg-blued">{{item.starts_at}}</td>
+                <td class="tg-blued">{{item.ends_at}}</td>
+                <td class="tg-blued">{{item.screen}}块</td>
+                <td class="tg-blued">{{item.count}}次</td>
+                </tr>
+        {% else %}
+                <tr align="center">
+                <td class="tg-bluel">{{item.campaign_id}}</td>
+                <td class="tg-bluel">{{item.customer_name}}</td>
+                <td class="tg-blue1">{{item.sb_id}}</td>
+                <td class="tg-bluel">{{item.starts_at}}</td>
+                <td class="tg-bluel">{{item.ends_at}}</td>
+                <td class="tg-bluel">{{item.screen}}块</td>
+                <td class="tg-blue1">{{item.count}}次</td>
+                </tr>
+        {% endif %}
+{% endfor %}
+</table>
+<p style="color:black;font-size:15pix"><b>刷新时间：</b>&nbsp<i>{{display_time}}</i></p>
+</body>
+</html>
