@@ -20,6 +20,7 @@ import os
 from collections import Counter
 import smtplib
 from email.mime.text import MIMEText
+from email.header import Header
 import logging
 import schedule
 import sys
@@ -321,7 +322,7 @@ def sendRemind(result,title):
         msg = MIMEText(result,'plain','utf-8')
         msg['From'] = Header(from_addr)
         msg['To'] = Header(to_addr)
-        msg['Subject'] = Header('告警！%s放不出来的campaign' % title)
+        msg['Subject'] = Header('告警！' + title + '放不出来的campaign',charset='utf8')
         server = smtplib.SMTP()
         server.connect(smtp_server,587)
         server.login(from_addr, password)
