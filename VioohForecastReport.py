@@ -4,7 +4,8 @@
 '''
 @Author Sam Cheng
 @desc this is a script for tomorrow plan of campaigns
-@date 2020-09-15
+@create 2020-09-15
+@modify 2020-10-22
 '''
 import datetime
 from jinja2 import Environment,FileSystemLoader
@@ -23,11 +24,14 @@ from email.mime.text import MIMEText
 from email.header import Header
 import logging
 import schedule
-import sys
+import importlib
 import configparser
+import sys
 
 reload(sys)
 sys.setdefaultencoding('utf8')
+
+
 
 cur_path = os.path.dirname(os.path.realpath(__file__))
 config_path = os.path.join(cur_path,'config.ini')
@@ -70,44 +74,76 @@ tomorrow=''
 today=''
 display_time=''
 
+                tomorrow = str(datetime.date.today()+datetime.timedelta(days=1))
+                n_time = datetime.datetime.now()
+                s_time = datetime.datetime.strptime(str(n_time.date())+'15:30', '%Y-%m-%d%H:%M')
+                l_time =  datetime.datetime.strptime(str(n_time.date())+'16:30', '%Y-%m-%d%H:%M')
+                if n_time > s_time and n_time<l_time:
+                msg['Subject'] = "250块电子屏" + tomorrow + "VIOOH明日播放预告"
 
-def sendMail(to_list,to_cc):
 
-        tomorrow = str(datetime.date.today()+datetime.timedelta(days=1))
-        d_time = datetime.datetime.strptime(str(datetime.datetime.now().date())+'15:30', '%Y-%m-%d%H:%M')
-        d_time1 =  datetime.datetime.strptime(str(datetime.datetime.now().date())+'16:30', '%Y-%m-%d%H:%M')
-        n_time = datetime.datetime.now()
-        if n_time > d_time and n_time<d_time1:
-                f = open(send_file,'r')
-                msg = 'VFR4.3b'
+class sendMail():
+
+        def __init__(self,to_list,to_cc,subject,send_file):
+                
+                cur_path = os.path.dirname(os.path.realpath(__file__))
+                config_path = os.path.join(cur_path,'config.ini')
+                conf = configparser.ConfigParser()
+                conf.read(config_path)
+                self.mail_host = conf.get('MAIL','mail_host')
+                self.mail_user = conf.get('MAIL','mail_user')
+                self.mail_pass = conf.get('MAIL','mail_pass')
+                self.to_list=to_list
+                self.to_cc=to_cc
+                self.send_file=send_file
+                self.subject=subject
+
+        def sendReport(self):
+
+                f = open(self.send_file,'r')
+                msg = ''
                 while True:
                         line = f.readline()
                         msg += line.strip() +'\n'
                         if not line:
-                                break
+                                 break
                 f.close()
                 mail_content = msg.encode('utf-8')
                 me = mail_user + "<" + mail_user + ">"
                 msg = MIMEText(mail_content,_subtype = 'html',_charset = 'utf8')
-                msg['Subject'] = "250块电子屏" + tomorrow + "VIOOH明日播放预告"
+                msg['Subject'] = self.subject
                 msg['From'] = mail_user
-                msg['To'] = ";".join(to_list)
-                msg['Cc'] = ";".join(to_cc)
+                msg['To'] = ";".join(self.to_list)
+                msg['Cc'] = ";".join(self.to_cc)
                 try:
-                        s = smtplib.SMTP()
-                        s.connect(mail_host,587)
-                        s.ehlo()
-                        s.starttls()
-                        s.login(mail_user,mail_pass)
-                        s.sendmail(me,to_list+to_cc,msg.as_string())
-                        s.close()
+                        self.s = smtplib.SMTP()
+                        self.s.connect(mail_host,587)
+                        self.s.ehlo()
+                        self.s.starttls()
+                        self.s.login(mail_user,mail_pass)
+                        self.s.sendmail(me,self.to_list+self.to_cc,msg.as_string())
+                        self.s.close()
                         logging.debug('发送邮件成功')
                         return True
                 except Exception as e:
                         logging.error('发送邮件失败，原因:%s' % e)
                         return False
-
-
+'''
+        def sendWarning1(self):
+                msg = MIMEText(result,'plain','utf-8')
+                msg['From'] = mail_user
+                msg['To'] = ";".join(self.to_list)
+                msg['Cc'] = ";".join(self.to_cc)
+                msg['Subject'] = Header('告警！' + title + '放不出来的campaign',charset='utf8')
+                try:
+                        self.s.sendmail(me,self.to_list+self.to_cc,msg.as_string())
+                        self.s.close()
+                        logging.debug('发送邮件成功')
+                        return True
+                except Exception as e:
+                        logging.error('发送邮件失败，原因:%s' % e)
+                        return False
+'''
 def readPlayerId():
         conn = pymysql.connect(host=myhost,port=myport,user=myuser,passwd=mypasswd,db=mydb)
         cursor_1 = conn.cursor()
