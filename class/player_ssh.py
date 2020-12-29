@@ -60,3 +60,12 @@ def update_one(playerlist):
     while result:
         result=test_paramiko_interact(playerlist)
         time.sleep(10)
+ 
+def tags_pull(playerIP):
+    if(os.system('ping -c 1 -w 1 ' + str(playerIP)) == 0):
+        print('OK')
+        linux_command = 'sudo DMS-tags pull'
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh.connect(str(playerIP),username = 'STD-MO',pkey = key,timeout = 900)
+        stdin,stdout,stderr = ssh.exec_command(linux_command)
