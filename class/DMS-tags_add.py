@@ -5,7 +5,7 @@ import requests
 import ssl
 import json
 
-def add_tags(mac):
+def dms_update_reset(mac):
     cookies = ''
     ssl._create_default_https_context = ssl._create_unverified_context
     url = "https://dms-tags.jcdecaux.com/dologin.html"
