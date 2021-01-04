@@ -36,23 +36,23 @@ def test_paramiko_interact(playerIP):
                 print(values)
                 stdin,stdout,stderr = ssh.exec_command('sudo reboot')
                 ssh.close()
-                logger.info(str(playerIP) + str(values))
+                logger.info(str(playerIP) + ' ' + str(values)gi)
                 return True
             elif 'dl_failed' in values:
                 print(values)
-                logger.info(str(playerIP) + 'updating ended successfully')
+                logger.info(str(playerIP) + ' finish updating successfully.')
                 ssh.close()
                 return False
             elif 'removing' in values:
                 print(values)
-                logger.info(str(playerIP) + 'updating ended successfully')
+                logger.info(str(playerIP) + ' finish updating successfully.')
                 ssh.close()
                 return False
         ssh.close()
         return True
     else:
-        print ('connection failed')
-        logger.info(str(playerIP) + 'connection failed')
+        print (str(playerIP) + ' connection failed.')
+        logger.info(str(playerIP) + ' connection failed.')
         return True
 
 def update_one(playerlist):
