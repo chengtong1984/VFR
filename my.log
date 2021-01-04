@@ -1,0 +1,11 @@
+2020-12-31 01:55:41,512 - DEBUG - this is  debug
+2020-12-31 01:55:41,513 - INFO - this is  info
+2020-12-31 01:55:41,513 - WARNING - this is  warning
+2020-12-31 01:55:41,513 - ERROR - this is  error
+2020-12-31 01:55:41,513 - CRITICAL - this is  critical
+2020-12-31 01:55:41,513 - ERROR - test donw
+2020-12-31 01:55:41,513 - ERROR - main done
+2020-12-31 02:04:00,754 - ERROR - test donw
+2020-12-31 02:04:00,768 - ERROR - main done
+2021-01-04 17:22:33,865 - ERROR - test donw
+2021-01-04 17:22:33,876 - ERROR - main done

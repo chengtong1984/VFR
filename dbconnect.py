@@ -51,7 +51,6 @@ class vfrMySQL:
                                    #cursorclass=pymysql.cursors.DictCursor,
                                    charset=self._dbcharset)
         except Exception as e:
-            raise
             #print("数据库连接出错")
             conn = False
         return conn
@@ -60,7 +59,7 @@ class vfrMySQL:
         if (self._conn):
             try:
                 if (type(self._cursor) == 'object'):
-                    self._conn.close()
+                    self._cursor.close()
                 if (type(self._conn) == 'object'):
                     self._conn.close()
             except Exception:
@@ -96,23 +95,33 @@ class vfrMySQL:
             self.close()
         return res
 
-    def ExecInsert(self,sql,*args):
+    def ExecInsert(self,data={}):
         """
-        执行查询语句
+        执行插入语句
         """
-        res = ''
         if (self._conn):
             try:
-                self._cursor.execute(sql,args)
-                res = self._cursor.fetchone()
-            except Exception:
-                res = False
-                print("查询异常")
+                keys = []
+                values = []
+                for k,v in data.items():
+                    keys.append(k)
+                    values.append(v)
+                sql = "insert into %s(%s) values(%s)" % (table_name,','.join(keys),','.join(['%s']*len(values)))
+                print(sql)
+                self._cursor.execute(sql,tuple(values))
+                self._conn.commit()
+                return self._cursor.lastrowid
+            except Exception as err:
+                print("SQL添加执行错误，原因：%s" % err)
+                return False
             self.close()
-        return res
+        return True
 
-media1='DP'
-media2='LED'
-conn = vfrMySQL()
-test_sql = conn.ExecQueryAll("select hostName,playerID from relationalTable where mediaType = %s or mediaType = %s",media1,media2)
-print(test_sql)
+    def __del__(self):
+        """
+        关闭对象
+        """
+        if self._cursor != None:
+            self._cursor.close()
+        if self._conn != None:
+            self._conn.close()

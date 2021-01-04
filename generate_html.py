@@ -48,6 +48,7 @@ class generate_html():
                 self.send_file = conf.get('MAIL','send_file_path')
                 self.send_tomorrow_warning = conf.get('MAIL','send_tomorrow_warning_path')
                 self.send_today_warning = conf.get('MAIL','send_today_warning_path')
+                self.send_player_update = conf.get('MAIL','send_player_update_path')
                 self.conn=pymysql.connect(host=myhost,port=myport,user=myuser,passwd=mypasswd,db=mydb,use_unicode=True,charset='utf8')
 
         def generate_plan(self):
@@ -145,9 +146,53 @@ class generate_html():
                         html_content=template.render(tomorrow=self.tomorrow,body=body,display_time=self.display_time)
                         fout.write(html_content)
                 print('成功生成今日报警')
+
+        def generate_player_update(self):
+
+                result={}
+                body=[]
+                num=1
+
+                file_name = '/anaconda/git/player_list'
+                with open(file_name) as file_obj:
+                        for content in file_obj:
+                                content = content.strip()
+
+                                sql_player_info = "select PLAYER,LOCATION,computer_model,platform_version from view_ip_search where IP = '%s'" % (content,)
+                                print(sql_player_info)
+                                cursor_2=self.conn.cursor()
+                                cursor_2.execute(sql_player_info)
+                                rows=cursor_2.fetchall()
+                                print(rows)
+               
+
+                                for row in rows:
+
+                                        result['player']=row[0]
+                                        result['location']=row[1]
+                                        result['computer_model']=row[2]
+                                        result['platform_version']=row[3]
+                                        result['num']=(num%2)
+
+                                        body.append(result.copy())
+                                        num=num+1
+ 
+                cursor_2.close()
+
+                env=Environment(loader=FileSystemLoader(self.cur_path))
+                template=env.get_template('template_update.html')
+                with open(self.send_player_update,'w+') as fout:
+                        html_content=template.render(tomorrow=self.today,body=body,display_time=self.display_time)
+                        fout.write(html_content)
+                print('成功生成今日升级报告')
+
         
-        def __del__(self):
-                try:
-                        self.conn.close()
-                except TypeError:
-                        pass
+        #def __del__(self):
+                #try:
+                #        self.conn.close()
+                #except TypeError:
+                #        pass
+
+if __name__ == "__main__":
+        aaaaa = generate_html()
+        aaaaa.generate_player_update()
